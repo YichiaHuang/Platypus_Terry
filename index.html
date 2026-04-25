@@ -2,15 +2,15 @@
 <html lang="zh-TW">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>03組_鴨嘴獸_泰瑞機器人_3D Demo</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>03組_鴨嘴獸_泰瑞機器人_3D Demo v9 (Mobile Friendly)</title>
   <script src="https://cdn.jsdelivr.net/npm/three@0.136.0/build/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.136.0/examples/js/controls/OrbitControls.js"></script>
   <style>
     html, body {
       margin: 0; width: 100%; height: 100%; overflow: hidden;
       font-family: Arial, "Microsoft JhengHei", sans-serif;
-      background: #071826; color: #fff;
+      background: #071826; color: #fff; touch-action: none; /* 防止手機瀏覽器滑動特效 */
     }
     #app { position: fixed; inset: 0; }
     #overlay { position: fixed; inset: 0; pointer-events: none; }
@@ -21,40 +21,43 @@
       border-radius: 18px; padding: 16px 18px;
       backdrop-filter: blur(10px);
       box-shadow: 0 12px 32px rgba(0,0,0,0.30);
+      transition: all 0.3s ease;
     }
-    #info { left: 18px; top: 18px; width: 360px; }
+    
+    /* 面板標題列 (包含收合按鈕) */
+    .header-row { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
+    .header-row h1, .header-row h3 { margin: 0; }
+    .icon-btn { 
+      background: rgba(255,255,255,0.05); border: 1px solid rgba(110, 196, 255, 0.2); color: #aef3ff; font-size: 14px; cursor: pointer; 
+      width: 28px; height: 28px; display: flex; align-items: center; justify-content: center;
+      border-radius: 8px; margin: -2px -2px 0 0; transition: background 0.2s; padding: 0;
+    }
+    .icon-btn:hover { background: rgba(110, 196, 255, 0.2); }
+
+    #info { left: 18px; top: 18px; width: 360px; max-width: calc(100vw - 36px); }
     #controls { right: 18px; top: 18px; width: 250px; }
     #status { left: 50%; transform: translateX(-50%); bottom: 18px; display: flex; gap: 18px; }
     #status .item { text-align: center; min-width: 110px; }
     #status .label { font-size: 12px; color: #91a8c2; margin-bottom: 4px; transition: color 0.3s; }
     #status .value { font-family: Consolas, monospace; font-size: 18px; color: #9deeff; }
-    h1 { margin: 0 0 4px 0; font-size: 31px; }
-    h2 { margin: 0 0 12px 0; font-size: 20px; color: #c9d7e6; font-weight: normal; }
-    p { margin: 0; line-height: 1.6; color: #d7e5f4; }
-    .small { font-size: 13px; color: #8fdfff; margin-top: 12px; }
-    .caption { font-size: 12px; color: #76dfff; letter-spacing: .14em; margin-bottom: 8px; }
-    button {
+    
+    h1 { margin: 0 0 4px 0; font-size: 28px; }
+    h2 { margin: 0 0 12px 0; font-size: 18px; color: #c9d7e6; font-weight: normal; }
+    p { margin: 0; line-height: 1.6; color: #d7e5f4; font-size: 14px; }
+    .small { font-size: 12px; color: #8fdfff; margin-top: 12px; }
+    .caption { font-size: 12px; color: #76dfff; letter-spacing: .14em; margin-bottom: 4px; }
+    
+    .panel-btn {
       width: 100%; padding: 12px 14px; margin-bottom: 9px; border-radius: 12px; border: 1px solid rgba(148,163,184,.18);
-      background: rgba(64,82,111,.88); color: #fff; font-size: 15px; cursor: pointer; text-align: left;
+      background: rgba(64,82,111,.88); color: #fff; font-size: 14px; cursor: pointer; text-align: left;
       transition: .2s ease;
     }
-    button:hover { background: rgba(84,104,137,.95); }
-    button.active { background: rgba(12, 129, 166, 0.85); border-color: rgba(103, 232, 249, 0.65); box-shadow: 0 0 0 2px rgba(103,232,249,0.35) inset; }
+    .panel-btn:hover { background: rgba(84,104,137,.95); }
+    .panel-btn.active { background: rgba(12, 129, 166, 0.85); border-color: rgba(103, 232, 249, 0.65); box-shadow: 0 0 0 2px rgba(103,232,249,0.35) inset; }
     
-    /* 獨立燈光按鈕樣式 */
-    #btnLight {
-      background: rgba(14, 165, 233, 0.15); 
-      border-color: rgba(56, 189, 248, 0.4); 
-      color: #7dd3fc;
-      margin-top: 4px;
-    }
+    #btnLight { background: rgba(14, 165, 233, 0.15); border-color: rgba(56, 189, 248, 0.4); color: #7dd3fc; margin-top: 4px; }
     #btnLight:hover { background: rgba(14, 165, 233, 0.3); }
-    #btnLight.light-on {
-      background: rgba(14, 165, 233, 0.85); 
-      color: #fff;
-      border-color: #7dd3fc;
-      box-shadow: 0 0 12px rgba(56, 189, 248, 0.5) inset;
-    }
+    #btnLight.light-on { background: rgba(14, 165, 233, 0.85); color: #fff; border-color: #7dd3fc; box-shadow: 0 0 12px rgba(56, 189, 248, 0.5) inset; }
 
     .tag {
       position: absolute; transform: translate(-50%, -110%);
@@ -64,19 +67,33 @@
     }
     .tag.show { opacity: 1; }
     .tag.show:hover { background: rgba(8, 75, 101, 0.92); color: white; box-shadow: 0 0 12px rgba(103,232,249,.55); }
-    #partDetail {
-      right: 18px; bottom: 18px; width: 330px; display: none;
-    }
-    #partDetail h3 { margin: 0 0 8px 0; font-size: 18px; color: #aef3ff; }
-    #partDetail p { font-size: 14px; line-height: 1.55; color: #d8eaff; }
+    .tag::after { content: ""; position: absolute; left: 50%; top: 100%; transform: translateX(-50%); width: 1px; height: 24px; background: rgba(103,232,249,0.9); }
+    
+    #partDetail { right: 18px; bottom: 18px; width: 330px; display: none; z-index: 100; }
+    #partDetail h3 { margin: 0; font-size: 18px; color: #aef3ff; }
+    #partDetail p { font-size: 14px; line-height: 1.55; color: #d8eaff; margin-top: 8px;}
     #partDetail .hint { margin-top: 10px; color: #83dfff; font-size: 12px; }
-    .tag::after {
-      content: ""; position: absolute; left: 50%; top: 100%; transform: translateX(-50%);
-      width: 1px; height: 24px; background: rgba(103,232,249,0.9);
-    }
-    #fallback {
-      position: absolute; inset: 0; display: none; align-items: center; justify-content: center;
-      background: #071826; color: white; text-align: center; padding: 30px; z-index: 99;
+    
+    #fallback { position: absolute; inset: 0; display: none; align-items: center; justify-content: center; background: #071826; color: white; text-align: center; padding: 30px; z-index: 99; }
+
+    /* ========== 手機版響應式設計 (RWD) ========== */
+    @media (max-width: 768px) {
+      #info { width: calc(100vw - 36px); left: 18px; top: 18px; padding: 12px 16px; }
+      #controls { width: calc(100vw - 36px); left: 18px; top: auto; bottom: 85px; right: auto; padding: 12px 16px; }
+      #controlsContent { display: flex; flex-wrap: wrap; justify-content: space-between; }
+      #controlsContent .panel-btn { width: 48%; padding: 10px 8px; font-size: 12px; margin-bottom: 8px; text-align: center; }
+      #controlsContent .full-width { width: 100%; }
+      
+      #status { width: 100vw; bottom: 0; border-radius: 0; padding: 10px 0; gap: 0; justify-content: space-evenly; border-left: none; border-right: none; border-bottom: none; background: rgba(5, 16, 28, 0.9); }
+      #status .item { min-width: 0; flex: 1; }
+      #status .value { font-size: 14px; }
+      #status .label { font-size: 11px; margin-bottom: 2px; }
+      
+      #partDetail { width: calc(100vw - 36px); bottom: 85px; left: 18px; right: auto; }
+      
+      h1 { font-size: 20px; }
+      h2 { font-size: 14px; margin-bottom: 8px; }
+      p { font-size: 13px; }
     }
   </style>
 </head>
@@ -84,28 +101,43 @@
   <div id="app"></div>
 
   <div id="overlay">
+    <!-- 介紹說明面板 -->
     <div id="info" class="panel">
-      <div class="caption">3D INTERACTIVE DEMO</div>
-      <h1>仿生鴨嘴獸水下救援機器人</h1>
-      <h2>代號：泰瑞 Terry</h2>
-      <p>第三組期中報告互動展示 Demo。可切換多種情境模式，並支援體積光前照燈；開啟部位標籤後，可點選各部位查看放大視角與設計說明。</p>
-      <div class="small">操作：滑鼠拖曳旋轉｜滾輪縮放｜右鍵平移｜點擊標籤查看細節</div>
+      <div class="header-row">
+        <div>
+          <div class="caption">3D INTERACTIVE DEMO</div>
+          <h1>仿生鴨嘴獸救援機器人</h1>
+        </div>
+        <button id="btnInfoToggle" class="icon-btn">➖</button>
+      </div>
+      <div id="infoContent">
+        <h2>代號：泰瑞 Terry</h2>
+        <p>第三組期中報告互動展示 Demo。可切換多種情境模式，並支援體積光前照燈；開啟部位標籤後，可點選各部位查看放大視角與設計說明。</p>
+        <div class="small">操作：單指拖曳旋轉｜雙指縮放與平移｜點擊標籤查看細節</div>
+      </div>
     </div>
 
+    <!-- 按鈕控制面板 -->
     <div id="controls" class="panel">
-      <div style="font-weight:bold; margin-bottom:10px; border-bottom:1px solid rgba(148,163,184,.22); padding-bottom:8px;">展示模式</div>
-      <button id="btnNormal" class="active">一般水下巡航</button>
-      <button id="btnDetect">生命偵測：電場＋聲納</button>
-      <button id="btnCurrent">急流抵抗：水壓感測</button>
-      <button id="btnRescue">救援流程：物資投放</button>
-      <button id="btnUV">螢光尋回模式</button>
-      
-      <div style="height: 1px; background: rgba(148,163,184,.22); margin: 12px 0;"></div>
-      
-      <button id="btnLight">開啟前照燈 (Off)</button>
-      <button id="btnLabels" style="background: rgba(7,105,140,.88);">隱藏部位標籤</button>
+      <div class="header-row" style="border-bottom:1px solid rgba(148,163,184,.22); padding-bottom:8px; margin-bottom: 12px;">
+        <div style="font-weight:bold; color: #aef3ff;">展示模式切換</div>
+        <button id="btnControlsToggle" class="icon-btn">➖</button>
+      </div>
+      <div id="controlsContent">
+        <button id="btnNormal" class="panel-btn active">一般水下巡航</button>
+        <button id="btnDetect" class="panel-btn">生命偵測：電場</button>
+        <button id="btnCurrent" class="panel-btn">急流抵抗：水壓</button>
+        <button id="btnRescue" class="panel-btn">救援：物資投放</button>
+        <button id="btnUV" class="panel-btn full-width">螢光尋回模式</button>
+        
+        <div class="full-width" style="height: 1px; background: rgba(148,163,184,.22); margin: 4px 0 12px 0;"></div>
+        
+        <button id="btnLight" class="panel-btn">開啟前照燈 (Off)</button>
+        <button id="btnLabels" class="panel-btn" style="background: rgba(7,105,140,.88);">隱藏部位標籤</button>
+      </div>
     </div>
 
+    <!-- 底部狀態列 -->
     <div id="status" class="panel">
       <div class="item"><div class="label">深度</div><div id="depthVal" class="value">12.4 m</div></div>
       <div class="item"><div class="label">生命訊號</div><div id="bioVal" class="value">standby</div></div>
@@ -113,12 +145,17 @@
       <div class="item"><div class="label">任務狀態</div><div id="statusVal" class="value">patrol</div></div>
     </div>
 
+    <!-- 部位說明彈出面板 -->
     <div id="partDetail" class="panel">
-      <h3 id="partTitle">部位說明</h3>
+      <div class="header-row">
+        <h3 id="partTitle">部位說明</h3>
+        <button id="btnPartClose" class="icon-btn">❌</button>
+      </div>
       <p id="partText">點選部位標籤後，這裡會顯示該模組的功能說明。</p>
-      <div class="hint">提示：再次拖曳滑鼠可離開放大視角，自由觀察模型。</div>
+      <div class="hint">提示：再次拖曳畫面可離開放大視角，自由觀察模型。</div>
     </div>
 
+    <!-- 3D 空間標籤 -->
     <div id="tagBill" class="tag">多模態感測喙部（電感知＋機械感測）</div>
     <div id="tagCamera" class="tag">前方照明＋攝影機</div>
     <div id="tagPouch" class="tag">臉頰袋：救援物資儲存</div>
@@ -130,7 +167,7 @@
       <div>
         <h2>3D 載入失敗</h2>
         <p>如果你是直接離線開啟且網路不穩，可能沒有成功載入 Three.js。</p>
-        <p>請改用 Chrome / Edge 再開一次，或保持網路連線。</p>
+        <p>請改用 Chrome / Safari 再開一次，或保持網路連線。</p>
       </div>
     </div>
   </div>
@@ -142,6 +179,36 @@
         fallback.style.display = 'flex';
         return;
       }
+
+      // ================= UI 收合邏輯 =================
+      function setupToggle(btnId, contentId) {
+        const btn = document.getElementById(btnId);
+        const content = document.getElementById(contentId);
+        btn.onclick = function() {
+          if (content.style.display === 'none') {
+            content.style.display = '';
+            btn.textContent = '➖';
+          } else {
+            content.style.display = 'none';
+            btn.textContent = '➕';
+          }
+        };
+      }
+      setupToggle('btnInfoToggle', 'infoContent');
+      setupToggle('btnControlsToggle', 'controlsContent');
+
+      // 關閉部位詳細說明
+      document.getElementById('btnPartClose').onclick = () => {
+        document.getElementById('partDetail').style.display = 'none';
+      };
+
+      // 手機版預設收合介紹面板
+      if (window.innerWidth < 768) {
+        document.getElementById('infoContent').style.display = 'none';
+        document.getElementById('btnInfoToggle').textContent = '➕';
+        // 控制面板預設展開以利操作，但使用者隨時可點擊收合
+      }
+      // ===============================================
 
       const app = document.getElementById('app');
       const scene = new THREE.Scene();
@@ -203,16 +270,13 @@
       const robot = new THREE.Group();
       scene.add(robot);
 
-      // --- 【新增】頭部轉軸樞紐 ---
       const neckPivot = new THREE.Group();
-      neckPivot.position.set(0, 0, 2.2); // 脖子關節位置 (位於身體前段)
+      neckPivot.position.set(0, 0, 2.2); 
       robot.add(neckPivot);
 
-      // headGroup 用來裝載所有頭部零件，並抵銷樞紐的座標位移，讓我們不用重算所有座標
       const headGroup = new THREE.Group();
       headGroup.position.set(0, 0, -2.2); 
       neckPivot.add(headGroup);
-      // -----------------------------
 
       const brown = new THREE.MeshStandardMaterial({ color: 0xa26030, roughness: 0.86, metalness: 0.05 });
       const bellyMat = new THREE.MeshStandardMaterial({ color: 0xd7a66a, roughness: 0.88, metalness: 0.02 });
@@ -235,18 +299,15 @@
         return mesh;
       }
 
-      // More obviously platypus-like silhouette
       const body = addSphere(robot, brown, 0, 0, 0, 1.8, 0.95, 3.15);
       const belly = addSphere(robot, bellyMat, 0, -0.42, 0.15, 1.25, 0.35, 2.25);
       
-      // 將頭部、鴨嘴改為綁定到 headGroup
       const head = addSphere(headGroup, brown, 0, 0.18, 3.05, 1.22, 0.82, 1.18);
       const billBase = addSphere(headGroup, billMat, 0, -0.05, 4.25, 1.60, 0.22, 0.95, 'bill');
       const billTip = addSphere(headGroup, billMat, 0, -0.08, 4.90, 1.25, 0.15, 0.42, 'tag-bill');
       const tail = addSphere(robot, brown, 0, -0.05, -3.35, 1.65, 0.18, 1.45, 'tag-tail');
       tail.rotation.x = -0.35;
 
-      // Tail lines
       for (let i = -2; i <= 2; i++) {
         const pts = [
           new THREE.Vector3(i * 0.24, 0.10, -2.45),
@@ -259,22 +320,18 @@
         robot.add(line);
       }
 
-      // Eyes and nostrils (改綁定到 headGroup)
       addSphere(headGroup, darkMat, -0.44, 0.55, 3.60, 0.08, 0.08, 0.08);
       addSphere(headGroup, darkMat,  0.44, 0.55, 3.60, 0.08, 0.08, 0.08);
       addSphere(headGroup, darkMat, -0.30, 0.08, 5.08, 0.06, 0.03, 0.04);
       addSphere(headGroup, darkMat,  0.30, 0.08, 5.08, 0.06, 0.03, 0.04);
 
-      // Pouches
       const pouchL = addSphere(robot, bellyMat, -1.05, -0.10, 2.55, 0.45, 0.34, 0.68, 'tag-pouch');
       const pouchR = addSphere(robot, bellyMat,  1.05, -0.10, 2.55, 0.45, 0.34, 0.68);
 
-      // Pouch compartment lids
       const lidL = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 0.10, 24), metalMat);
       lidL.position.set(-1.10, -0.03, 3.02); lidL.rotation.x = Math.PI / 2; robot.add(lidL);
       const lidR = lidL.clone(); lidR.position.x = 1.10; robot.add(lidR);
 
-      // Webbed feet
       function makeFoot(x, z, flip, name) {
         const foot = new THREE.Group();
         foot.position.set(x, -0.88, z);
@@ -297,7 +354,6 @@
         return foot;
       }
       
-      // 宣告陣列儲存四肢以利後續呼叫動畫
       const feet = [];
       feet.push(makeFoot(-1.65, 1.35, true));
       feet.push(makeFoot(1.65, 1.35, false));
@@ -305,7 +361,6 @@
       const rearFoot = makeFoot(1.45, -1.95, false, 'tag-spur');
       feet.push(rearFoot);
 
-      // Spurs
       function addSpur(x) {
         const spur = new THREE.Mesh(new THREE.ConeGeometry(0.11, 0.75, 20), redMat);
         spur.position.set(x, -0.72, -2.55);
@@ -315,11 +370,10 @@
       addSpur(1.55);
       addSpur(-1.55);
 
-      // Camera + light cluster mounted above bill
       const cameraRig = new THREE.Group();
       cameraRig.position.set(0, 0.36, 4.40);
       cameraRig.name = 'tag-camera';
-      headGroup.add(cameraRig); // 改綁定到 headGroup
+      headGroup.add(cameraRig); 
       const camBody = new THREE.Mesh(new THREE.BoxGeometry(0.80, 0.28, 0.28), metalMat);
       cameraRig.add(camBody);
       const lens = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.13, 0.10, 24), darkMat);
@@ -329,8 +383,7 @@
       const lampR = lampL.clone(); lampR.position.x = 0.48; cameraRig.add(lampR);
 
       // ==========================================
-      // 前照燈系統 (Volumetric Beams + SpotLight)
-      // ==========================================
+      // 前照燈系統
       const headlightGroup = new THREE.Group();
       cameraRig.add(headlightGroup);
 
@@ -363,10 +416,8 @@
 
       headlightGroup.visible = false;
       let isLightOn = false;
-
       // ==========================================
 
-      // GPS float and antenna
       const floatRig = new THREE.Group();
       floatRig.position.set(0.12, 1.05, 0.95);
       floatRig.name = 'tag-float';
@@ -380,9 +431,8 @@
       const antennaTip = new THREE.Mesh(new THREE.SphereGeometry(0.07, 16, 16), greenMat);
       antennaTip.position.y = 1.50; floatRig.add(antennaTip);
 
-      // Sensor dots on bill
       const sensorDots = new THREE.Group();
-      headGroup.add(sensorDots); // 改綁定到 headGroup
+      headGroup.add(sensorDots); 
       const dotGeo = new THREE.SphereGeometry(0.04, 10, 10);
       for (let x = -1.05; x <= 1.05; x += 0.28) {
         for (let z = 3.80; z <= 4.85; z += 0.23) {
@@ -395,7 +445,6 @@
         }
       }
 
-      // Rescue pack and ring
       const rescuePack = new THREE.Group();
       robot.add(rescuePack);
       rescuePack.position.set(-0.95, -0.60, 2.25);
@@ -405,7 +454,6 @@
       lifeRing.position.z = 0.36; lifeRing.rotation.x = Math.PI / 2; rescuePack.add(lifeRing);
       rescuePack.visible = false;
 
-      // Target / victim marker
       const target = new THREE.Group();
       target.position.set(-4.4, -1.10, 2.8);
       target.visible = false;
@@ -417,9 +465,8 @@
       const targetRing = new THREE.Mesh(new THREE.TorusGeometry(0.60, 0.04, 12, 50), new THREE.MeshBasicMaterial({ color: 0x4cff96, transparent: true, opacity: 0.60 }));
       targetRing.rotation.y = Math.PI / 2; target.add(targetRing);
 
-      // Sonar/electric waves
       const waves = new THREE.Group();
-      headGroup.add(waves); // 改綁定到 headGroup
+      headGroup.add(waves); 
       waves.visible = false;
       for (let i = 0; i < 4; i++) {
         const ring = new THREE.Mesh(
@@ -438,7 +485,6 @@
       const beamLines = new THREE.LineSegments(beamGeom, new THREE.LineBasicMaterial({ color: 0x52ff99, transparent: true, opacity: 0.55 }));
       waves.add(beamLines);
 
-      // Bubbles
       const bubbles = new THREE.Group();
       scene.add(bubbles);
       const bubbleGeo = new THREE.SphereGeometry(0.04, 10, 10);
@@ -452,14 +498,7 @@
         bubbles.add(bubble);
       }
 
-      const tags = {
-        tagBill: billTip,
-        tagCamera: cameraRig,
-        tagPouch: pouchL,
-        tagSpur: rearFoot,
-        tagFloat: floatRig,
-        tagTail: tail
-      };
+      const tags = { tagBill: billTip, tagCamera: cameraRig, tagPouch: pouchL, tagSpur: rearFoot, tagFloat: floatRig, tagTail: tail };
 
       const partDetails = {
         tagBill: {
@@ -512,6 +551,12 @@
         partTitle.textContent = info.title;
         partText.textContent = info.text;
         partDetail.style.display = 'block';
+        
+        // 點擊標籤時，如果是手機版，自動收合控制面板避免擋住畫面
+        if (window.innerWidth < 768) {
+          document.getElementById('controlsContent').style.display = 'none';
+          document.getElementById('btnControlsToggle').textContent = '➕';
+        }
       }
 
       Object.keys(tags).forEach(id => {
@@ -580,35 +625,18 @@
           bellyMat.emissive = new THREE.Color(0x000000);
           bellyMat.emissiveIntensity = 0;
 
-          // 復原標籤名稱
           if (mode === 'current') {
             fieldLabel.textContent = '水流速';
-            fieldLabel.style.color = '#f87171'; // 紅色警示
+            fieldLabel.style.color = '#f87171'; 
           } else {
             fieldLabel.textContent = '微電場';
             fieldLabel.style.color = '#91a8c2';
           }
 
-          if (mode === 'normal') {
-            bioEl.textContent = 'standby';
-            fieldEl.textContent = '-- μV/cm';
-            statusEl.textContent = 'patrol';
-          }
-          if (mode === 'detect') {
-            bioEl.textContent = 'detected';
-            fieldEl.textContent = '45 μV/cm';
-            statusEl.textContent = 'scan';
-          }
-          if (mode === 'current') {
-            bioEl.textContent = 'sensing';
-            fieldEl.textContent = '2.8 m/s';
-            statusEl.textContent = 'resisting';
-          }
-          if (mode === 'rescue') {
-            bioEl.textContent = 'locked';
-            fieldEl.textContent = '52 μV/cm';
-            statusEl.textContent = 'rescue';
-          }
+          if (mode === 'normal') { bioEl.textContent = 'standby'; fieldEl.textContent = '-- μV/cm'; statusEl.textContent = 'patrol'; }
+          if (mode === 'detect') { bioEl.textContent = 'detected'; fieldEl.textContent = '45 μV/cm'; statusEl.textContent = 'scan'; }
+          if (mode === 'current') { bioEl.textContent = 'sensing'; fieldEl.textContent = '2.8 m/s'; statusEl.textContent = 'resisting'; }
+          if (mode === 'rescue') { bioEl.textContent = 'locked'; fieldEl.textContent = '52 μV/cm'; statusEl.textContent = 'rescue'; }
         }
       }
 
@@ -618,7 +646,6 @@
       buttons.rescue.onclick = () => setMode('rescue');
       buttons.uv.onclick = () => setMode('uv');
       
-      // 前照燈切換邏輯
       const btnLight = document.getElementById('btnLight');
       btnLight.onclick = function() {
         isLightOn = !isLightOn;
@@ -669,40 +696,25 @@
         const dt = t - lastTime;
         lastTime = t;
 
-        // 抵抗急流時，身體會前傾 (壓低頭部) 降低水阻
         const tiltDown = currentMode === 'current' ? 0.25 : 0;
         robot.position.y = Math.sin(t * 1.2) * 0.15;
         robot.rotation.z = Math.sin(t * 0.8) * 0.05;
         robot.rotation.x = Math.sin(t * 0.7) * 0.02 + tiltDown;
 
-        // --- 【新增】頭部擺動 (Neck Swing) ---
-        let targetAmp = 0.08; // 預設微幅擺動
-        let targetSpeed = 2;  // 預設慢速
+        let targetAmp = 0.08; 
+        let targetSpeed = 2;  
         
-        if (currentMode === 'detect') {
-            targetAmp = 0.35; // 偵測模式：大範圍左右掃描，模擬尋找電場源
-            targetSpeed = 5;
-        } else if (currentMode === 'current') {
-            targetAmp = 0.03; // 急流模式：頭部固定抵抗水流，僅微幅震動
-            targetSpeed = 12;
-        } else if (currentMode === 'rescue') {
-            targetAmp = 0.15; // 救援模式：鎖定目標，中等幅度
-            targetSpeed = 3;
-        }
+        if (currentMode === 'detect') { targetAmp = 0.35; targetSpeed = 5; } 
+        else if (currentMode === 'current') { targetAmp = 0.03; targetSpeed = 12; } 
+        else if (currentMode === 'rescue') { targetAmp = 0.15; targetSpeed = 3; }
 
-        // 平滑過渡動畫參數 (避免切換模式時瞬間卡頓)
         neckPivot.userData.amp = THREE.MathUtils.lerp(neckPivot.userData.amp || targetAmp, targetAmp, 0.05);
         neckPivot.userData.speed = THREE.MathUtils.lerp(neckPivot.userData.speed || targetSpeed, targetSpeed, 0.05);
         
-        // 【修正】使用相位累加(Phase Accumulation)取代絕對時間乘積，避免切換時因 t 值過大造成的頻率劇烈跳動
         if (neckPivot.userData.phase === undefined) neckPivot.userData.phase = 0;
         neckPivot.userData.phase += neckPivot.userData.speed * dt;
-
-        // 套用頭部旋轉 (左右擺頭)
         neckPivot.rotation.y = Math.sin(neckPivot.userData.phase) * neckPivot.userData.amp;
-        // ------------------------------------
 
-        // 鴨嘴獸四肢划水動畫 (左右交替、前後相位差)
         const targetPaddleSpeed = currentMode === 'current' ? 18 : 6;
         const targetPaddleAmp = currentMode === 'current' ? 0.6 : 0.35;
 
@@ -713,8 +725,8 @@
         
         feet.forEach((foot, i) => {
           const phaseOffset = (i % 2 === 0 ? 0 : Math.PI) + (i > 1 ? Math.PI / 2 : 0);
-          foot.rotation.y = Math.sin(robot.userData.paddlePhase + phaseOffset) * robot.userData.paddleAmp; // 前後擺動
-          foot.rotation.x = Math.cos(robot.userData.paddlePhase + phaseOffset) * 0.15; // 提腳/下壓微調
+          foot.rotation.y = Math.sin(robot.userData.paddlePhase + phaseOffset) * robot.userData.paddleAmp; 
+          foot.rotation.x = Math.cos(robot.userData.paddlePhase + phaseOffset) * 0.15; 
         });
 
         sensorDots.children.forEach((dot, i) => {
@@ -739,29 +751,24 @@
 
         targetRing.rotation.z = t * 0.8;
         
-        // 氣泡模擬水流
         bubbles.children.forEach(b => {
           if (currentMode === 'current') {
-            // 急流模式：水流從前方快速往後沖刷
-            b.position.z += b.userData.speed * 40; // 高速後退
+            b.position.z += b.userData.speed * 40; 
             b.position.y += b.userData.speed * 0.2; 
             if (b.position.z > 15) {
-              b.position.z = -15; // 重置到前方
+              b.position.z = -15; 
               b.position.x = (Math.random() - 0.5) * 28;
               b.position.y = -2 + Math.random() * 12;
             }
           } else {
-            // 正常模式：緩慢上浮
             b.position.y += b.userData.speed;
             if (b.position.y > 8) b.position.y = -2.3;
           }
         });
 
-        // 急流模式時深度儀表會有劇烈晃動感
         const currentWobble = currentMode === 'current' ? (Math.random() * 0.2 - 0.1) : 0;
         depthEl.textContent = (12.3 + 0.6 * Math.sin(t * 0.7) + currentWobble).toFixed(1) + ' m';
         
-        // 急流模式模擬動態水流速
         if (currentMode === 'current' && Math.random() > 0.9) {
            fieldEl.textContent = (2.6 + Math.random() * 0.5).toFixed(1) + ' m/s';
         }
